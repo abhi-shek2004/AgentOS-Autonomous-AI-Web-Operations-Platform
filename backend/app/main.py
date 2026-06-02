@@ -63,6 +63,26 @@ class SessionResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class CredentialListItem(BaseModel):
+    domain: str
+    username_masked: str
+    updated_at: datetime.datetime
+    class Config:
+        from_attributes = True
+
+class SettingsUpdate(BaseModel):
+    openai_api_key: Optional[str] = None
+    nvidia_api_key: Optional[str] = None
+    default_model: Optional[str] = None
+    is_simulation: Optional[bool] = None
+
+class SettingsResponse(BaseModel):
+    openai_api_key_masked: str
+    nvidia_api_key_masked: str
+    default_model: str
+    is_simulation: bool
+    environment: str
+
 
 # WebSocket active connection manager
 class ConnectionManager:
@@ -206,7 +226,7 @@ def store_vault_credential(payload: CredentialCreate, db: Session = Depends(get_
 # 6. Retrieve long-term memory indexes
 @app.get("/api/memory")
 def get_memory_bank(db: Session = Depends(get_db)):
-    memories = db.query(MemoryIndex).order_by(MemoryIndex.created_at.desc()).all()
+    memories = db.query(MemoryIndex).order_by(MemoryIndex.created_at.desc()).limit(100).all()
     return [
         {
             "id": mem.id,
@@ -217,6 +237,94 @@ def get_memory_bank(db: Session = Depends(get_db)):
         }
         for mem in memories
     ]
+
+# 6b. List all vault credentials (masked)
+@app.get("/api/credentials")
+def list_vault_credentials(db: Session = Depends(get_db)):
+    creds = db.query(SecureCredential).order_by(SecureCredential.updated_at.desc()).all()
+    out = []
+    for c in creds:
+        try:
+            dec = vault.decrypt(c.encrypted_username) if c.encrypted_username else ""
+        except Exception:
+            dec = ""
+        username = dec or "••••••"
+        masked = username[:3] + "***" + username[-1:] if len(username) > 4 else "***"
+        out.append({
+            "id": c.id,
+            "domain": c.domain,
+            "username_masked": masked,
+            "updated_at": c.updated_at
+        })
+    return out
+
+# 6c. Delete a vault credential
+@app.delete("/api/credentials/{cred_id}")
+def delete_vault_credential(cred_id: int, db: Session = Depends(get_db)):
+    cred = db.query(SecureCredential).filter(SecureCredential.id == cred_id).first()
+    if not cred:
+        raise HTTPException(status_code=404, detail="Credential not found")
+    domain = cred.domain
+    db.delete(cred)
+    db.commit()
+    return {"status": "success", "message": f"Credential for {domain} removed from vault."}
+
+# 7. Aggregated metrics for dashboard
+@app.get("/api/metrics")
+def get_metrics(db: Session = Depends(get_db)):
+    workflow_count = db.query(Workflow).count()
+    session_count = db.query(BrowserSession).count()
+    completed = db.query(Workflow).filter(Workflow.status == "completed").count()
+    failed = db.query(Workflow).filter(Workflow.status == "failed").count()
+    memory_count = db.query(MemoryIndex).count()
+    vault_count = db.query(SecureCredential).count()
+    return {
+        "total_workflows": workflow_count,
+        "total_sessions": session_count,
+        "completed_workflows": completed,
+        "failed_workflows": failed,
+        "memory_entries": memory_count,
+        "vault_entries": vault_count,
+        "success_rate": round((completed / max(workflow_count, 1)) * 100, 1),
+        "agent_stack_size": 7,
+    }
+
+# 8. Settings (read/update) - in-memory runtime config
+_runtime_settings = {
+    "openai_api_key": "",
+    "nvidia_api_key": "",
+    "default_model": settings.DEFAULT_MODEL,
+    "is_simulation": True,
+}
+
+def _mask_key(k: str) -> str:
+    if not k:
+        return ""
+    if len(k) <= 8:
+        return "•" * len(k)
+    return k[:4] + "•" * (len(k) - 8) + k[-4:]
+
+@app.get("/api/settings", response_model=SettingsResponse)
+def get_settings():
+    return SettingsResponse(
+        openai_api_key_masked=_mask_key(_runtime_settings["openai_api_key"]),
+        nvidia_api_key_masked=_mask_key(_runtime_settings["nvidia_api_key"]),
+        default_model=_runtime_settings["default_model"],
+        is_simulation=_runtime_settings["is_simulation"],
+        environment=settings.ENVIRONMENT,
+    )
+
+@app.post("/api/settings", response_model=SettingsResponse)
+def update_settings(payload: SettingsUpdate):
+    if payload.openai_api_key is not None:
+        _runtime_settings["openai_api_key"] = payload.openai_api_key
+    if payload.nvidia_api_key is not None:
+        _runtime_settings["nvidia_api_key"] = payload.nvidia_api_key
+    if payload.default_model is not None:
+        _runtime_settings["default_model"] = payload.default_model
+    if payload.is_simulation is not None:
+        _runtime_settings["is_simulation"] = payload.is_simulation
+    return get_settings()
 
 
 # -------------------------------------------------------------
@@ -238,7 +346,7 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str, db: Session 
     goal = workflow.goal if workflow else "Perform autonomous search research"
     
     # Check settings for mock toggle
-    is_simulation = True  # Defaults to simulation mode
+    is_simulation = _runtime_settings.get("is_simulation", True)  # Defaults to simulation mode
     
     try:
         # 1. Initialize LangGraph State Dictionary
@@ -263,44 +371,70 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str, db: Session 
         }
         
         # Stream the compiled LangGraph execution step-by-step
-        async for event in agent_os_graph.astream(initial_state):
+        # We accumulate full state across events so we can broadcast the
+        # entire current state on every node transition.
+        accumulated_state = dict(initial_state)
+        # Allow up to 200 step invocations to handle long workflows.
+        graph_config = {"recursion_limit": 200}
+        async for event in agent_os_graph.astream(initial_state, config=graph_config):
             # Parse state data outputted from active node
             # The event is a dictionary containing {node_name: updated_state}
             node_name = list(event.keys())[0]
-            updated_state = event[node_name]
-            
-            # Extract updated variables
-            current_status = updated_state.get("status", "running")
-            current_url = updated_state.get("current_url", "about:blank")
-            step_idx = updated_state.get("current_step_index", 0)
-            plan = updated_state.get("plan", [])
-            success_criteria = updated_state.get("success_criteria", [])
-            actions = updated_state.get("actions_taken", [])
-            screenshots = updated_state.get("screenshot_history", [])
-            token_usage = updated_state.get("token_usage", {"prompt": 0, "completion": 0, "total": 0})
-            cost_usd = updated_state.get("cost_usd", 0.0)
-            thoughts = updated_state.get("agent_thoughts", {})
-            errors = updated_state.get("errors", [])
-            
+            node_state = event[node_name]
+
+            # Merge this node's updates into the running accumulated state.
+            # LangGraph updates are partial dicts; merging gives us the full
+            # picture (plan, total steps, etc.) on every event.
+            if isinstance(node_state, dict):
+                accumulated_state.update(node_state)
+
+            # Extract variables from the full accumulated state
+            current_status = accumulated_state.get("status", "running")
+            current_url = accumulated_state.get("current_url", "about:blank")
+            step_idx = accumulated_state.get("current_step_index", 0)
+            plan = accumulated_state.get("plan", [])
+            success_criteria = accumulated_state.get("success_criteria", [])
+            actions = accumulated_state.get("actions_taken", [])
+            screenshots = accumulated_state.get("screenshot_history", [])
+            token_usage = accumulated_state.get("token_usage", {"prompt": 0, "completion": 0, "total": 0})
+            cost_usd = accumulated_state.get("cost_usd", 0.0)
+            thoughts = accumulated_state.get("agent_thoughts", {})
+            errors = accumulated_state.get("errors", [])
+
             # Fetch active agent text message
-            agent_display_name = node_name.capitalize()
+            agent_display_name = node_name.replace("_", " ").title().replace(" ", "")
+            # Map node names like "memory_index" → "Memory"
+            display_map = {
+                "memory_index": "Memory",
+                "supervisor": "Supervisor",
+                "planner": "Planner",
+                "navigator": "Navigator",
+                "executor": "Executor",
+                "validator": "Validator",
+                "recovery": "Recovery",
+            }
+            agent_display_name = display_map.get(node_name, node_name.capitalize())
             active_thought = thoughts.get(agent_display_name, f"Processing execution step inside {agent_display_name}.")
-            
+
             # Get latest screenshot
             active_screenshot = screenshots[-1] if screenshots else None
-            
+
             # Write audit log to database
-            new_log = ExecutionLog(
-                session_id=session_id,
-                agent_name=agent_display_name,
-                level="ERROR" if errors and node_name == "recovery" else "INFO",
-                message=active_thought,
-                reasoning=active_thought,
-                action_taken=actions[-1] if actions else None,
-                screenshot=active_screenshot
-            )
-            db.add(new_log)
-            
+            try:
+                new_log = ExecutionLog(
+                    session_id=session_id,
+                    agent_name=agent_display_name,
+                    level="ERROR" if errors and node_name == "recovery" else "INFO",
+                    message=active_thought[:4000],
+                    reasoning=active_thought[:4000],
+                    action_taken=actions[-1] if actions else None,
+                    screenshot=active_screenshot
+                )
+                db.add(new_log)
+            except Exception as log_err:
+                # Don't let logging failures break the workflow
+                print(f"Log error: {log_err}")
+
             # Update session database model metrics
             session.status = current_status
             session.current_url = current_url
@@ -308,7 +442,11 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str, db: Session 
             session.total_steps = len(plan)
             session.token_usage = token_usage
             session.cost_usd = {"amount": cost_usd}
-            db.commit()
+            try:
+                db.commit()
+            except Exception as commit_err:
+                db.rollback()
+                print(f"DB commit error: {commit_err}")
             
             # Broadcast state changes to the WebSocket client
             broadcast_payload = {

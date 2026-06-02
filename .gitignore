@@ -26,3 +26,13 @@ yarn-error.log*
 /playwright-report/
 /blob-report/
 /playwright/.local-browsers/
+
+# Runtime (PIDs, logs, build outputs)
+/.runtime/
+*.pid
+*.log.
+
+# Frontend env
+frontend/.env.local
+frontend/tsconfig.tsbuildinfo
+*.tsbuildinfo

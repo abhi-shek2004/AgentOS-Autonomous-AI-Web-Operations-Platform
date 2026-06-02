@@ -43,10 +43,11 @@ class ExecutorAgent:
             if action == "navigate":
                 state_updates["current_url"] = selector
                 mock_url = selector
-            
-            # Let's wait a brief moment to simulate network latency
-            time.sleep(0.5)
-            
+
+            # Brief async wait to simulate network latency (non-blocking)
+            import asyncio as _aio
+            await _aio.sleep(0.4)
+
             # Generate the mock image
             screenshot_b64 = self._draw_beautiful_browser_mockup(
                 url=mock_url,

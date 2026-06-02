@@ -1,178 +1,240 @@
-# 🌌 AgentOS: Autonomous AI Web Operations Platform
-
-<p align="center">
-  <img src="https://img.shields.io/badge/Platform-Autonomous%20Web%20OS-indigo?style=for-the-badge" alt="Platform" />
-  <img src="https://img.shields.io/badge/Orchestrator-LangGraph%20Multi--Agent-blue?style=for-the-badge" alt="Orchestrator" />
-  <img src="https://img.shields.io/badge/Engines-Playwright%20%7C%20Vision-emerald?style=for-the-badge" alt="Engines" />
-  <img src="https://img.shields.io/badge/Security-AES--256%20Vault-cyan?style=for-the-badge" alt="Security" />
-</p>
-
----
-
-## 🌟 Vision & Tagline
+# AgentOS — Autonomous AI Web Operations Platform
 
 > **"An autonomous multi-agent system capable of understanding, planning, executing, monitoring, and optimizing complex browser workflows without human intervention."**
 
-AgentOS is a production-grade, enterprise-scale autonomous web operations operating system designed to execute complex, multi-tab internet workflows natively. Powered by a specialized **7-Agent LangGraph Orchestrator**, AgentOS decomposes natural language goals, analyzes visible layouts via visual DOM coordinate grids, safely injects credentials from an AES-256 Vault, executes mouse/keyboard gestures via Playwright, and self-heals broken selectors automatically.
+AgentOS is a production-grade autonomous web operations platform that executes complex, multi-tab internet workflows natively. A 7-agent **LangGraph** orchestrator decomposes natural language goals, analyzes visible layouts via visual DOM coordinate grids, safely injects credentials from an AES-256 Vault, executes mouse/keyboard gestures via Playwright, and self-heals broken selectors automatically.
+
+The frontend is an elite dark-glass dashboard with WebGL neural backdrop, live WebSocket traces, and pixel-accurate replay center.
 
 ---
 
-## 🛠️ Multi-Agent Architecture & Sequence Flow
-
-AgentOS decomposes browser automation into seven highly specialized, isolated agents communicating asynchronously over a shared **LangGraph State Chart**:
-
-```mermaid
-graph TD
-    User([User Goal]) --> Supervisor[Supervisor Agent]
-    Supervisor --> Planner[Planner Agent]
-    Planner -->|Tree-of-Thought Steps & Validation Criteria| Supervisor
-    Supervisor --> Navigator[Navigator Agent]
-    Navigator -->|Accessibility Grid & Coordinates| Executor[Executor Agent]
-    Executor -->|Playwright Actions & Visual Captured Screen| Validator[Validator Agent]
-    Validator -->|Audits outcomes against Criteria checklist| Supervisor
-    
-    %% Error Flow & Self-healing
-    Validator -->|Broken Selector Detected| Recovery[Recovery Agent]
-    Recovery -->|Heal Selector CSS/XPath Workaround| Navigator
-    
-    %% Success Flow & Memory Index
-    Validator -->|Done| Memory[Memory Agent]
-    Memory -->|Index Trajectory Pathways| DB[(PostgreSQL Memory Bank)]
-    Validator -->|Completed| Output([Success Output])
-```
-
-### 🧠 Operational Core Agents
-1.  **Planner Agent** ([planner.py](file:///Users/abhishekraj/Desktop/project%20resume/backend/app/agents/planner.py)): Conducts zero-shot **Tree-of-Thought** goal decomposition. Translates a single instruction (e.g. *"Apply to software jobs on LinkedIn"*) into granular action JSON blocks accompanied by specific success checks.
-2.  **Navigator Agent** ([navigator.py](file:///Users/abhishekraj/Desktop/project%20resume/backend/app/agents/navigator.py)): Conducts page structural scans. Evaluates elements and coordinate systems to pinpoint interactable buttons, input boxes, or scroll regions.
-3.  **Executor Agent** ([executor.py](file:///Users/abhishekraj/Desktop/project%20resume/backend/app/agents/executor.py)): Drives the sandboxed browser context (Playwright). Executes click, scroll, fill, file uploads, and tabs management. Includes a custom visual image synthesis engine for simulated runs.
-4.  **Validator Agent** ([validator.py](file:///Users/abhishekraj/Desktop/project%20resume/backend/app/agents/validator.py)): The gatekeeper. Evaluates steps against criteria, verifying DOM changes and scraped fields before advancing step pointer.
-5.  **Recovery Agent** ([recovery.py](file:///Users/abhishekraj/Desktop/project%20resume/backend/app/agents/recovery.py)): Implements selector self-healing. Automatically diagnoses timeouts, locates alternative CSS/XPath targets, and heals the graph state on-the-fly without manual intervention.
-6.  **Memory Agent** ([memory.py](file:///Users/abhishekraj/Desktop/project%20resume/backend/app/agents/memory.py)): Parses completed action trails, indexes layouts, and stores successful selectors in PostgreSQL for immediate retrieval on future visits.
-7.  **Supervisor Agent** ([supervisor.py](file:///Users/abhishekraj/Desktop/project%20resume/backend/app/agents/supervisor.py)): The coordinator. Measures API token consumption, oversees safety gates, manages multi-tab threads, and triggers Human-in-the-Loop approval requests.
-
----
-
-## 💎 World-Class Showcase Features
-
-> [!IMPORTANT]
-> ### 1. Dual-Mode Execution Engine
-> *   **Live Production Mode**: Boots sandboxed Playwright engines, taking screenshots, analyzing HTML DOM grids, and communicating directly with OpenAI Vision (GPT-4o) or NVIDIA NIM APIs.
-> *   **Simulation Mode (Default/Demo)**: An ultra-realistic demo sandbox synthesizing dynamic webpage mockups, custom mouse pointer grids, and step events. Ideal for recruiter reviews without needing live keys.
-
-> [!TIP]
-> ### 2. Self-Healing Selector Engine
-> When a selector shifts (e.g. A/B testing variations or layout updates), the **Recovery Agent** recalculates accessibility pathways and applies fuzzy-matching CSS selector overrides in memory without aborting the thread:
-> ```
-> [Selector Fail] button.jobs-search-box__submit-button -> TIMEOUT
-> [Recovery Node] Searching accessibility tree heuristics...
-> [Heal Applied] Replaced with: button:has-text('Submit'), input[type='button']
-> [State Update] Rescheduling thread... Success!
-> ```
-
-> [!CAUTION]
-> ### 3. Cryptographic Secure Vault
-> Encrypts credentials symmetrically using **AES-256 (Fernet)** with derived SHA-256 secrets. Credentials are decrypted strictly in-memory during execution frames and never written to logs or databases in plain-text, ensuring absolute multi-tenant account isolation.
-
----
-
-## 🔍 Recruiter Technical Evaluation Map
-
-If you are a hiring manager or tech lead auditing this project, here is a checklist of files to inspect to judge coding caliber, concurrency models, and software engineering practices:
-
-*   **State Chart Logic**: Inspect [supervisor.py](file:///Users/abhishekraj/Desktop/project%20resume/backend/app/agents/supervisor.py) to audit the **LangGraph StateGraph** compilation, routing functions, and conditional validation loops.
-*   **Cryptographic Vaulting**: Inspect [security.py](file:///Users/abhishekraj/Desktop/project%20resume/backend/app/core/security.py) and [main.py](file:///Users/abhishekraj/Desktop/project%20resume/backend/app/main.py) to review how AES-256 symmetric vaults are implemented.
-*   **Dynamic UI Canvas Drawing**: Inspect [executor.py](file:///Users/abhishekraj/Desktop/project%20resume/backend/app/agents/executor.py) lines 136–256 to view the Pillow (PIL) canvas drawing mechanics that synthesize visual browser mockups for the Replay Center.
-*   **Real-Time Streaming**: Inspect [main.py](file:///Users/abhishekraj/Desktop/project%20resume/backend/app/main.py) lines 190–280 to audit the high-frequency **FastAPI WebSockets Connection Manager** which streams LangGraph state transitions `.astream()` node-by-node.
-
----
-
-## 📂 Project Directory Structure
+## Architecture
 
 ```
-agentos/
+                     ┌────────────────────┐
+   User goal  ─────▶ │   Supervisor Agent │  ◀── routes state
+                     └────────┬───────────┘
+            ┌──────────────────┼─────────────────────┐
+            ▼                  ▼                     ▼
+       Planner            Navigator              Memory
+   (Tree-of-Thought)   (DOM coordinate grid)   (index trajectories)
+            │                  │                     ▲
+            ▼                  ▼                     │
+       Validator ◀─────   Executor                  │
+       (gatekeeper)     (Playwright + PIL sim)      │
+            │                  │                     │
+            └─────▶ Recovery ◀─┘ (self-heal) ────────┘
+```
+
+Seven specialized agents share a typed LangGraph `AgentState` and stream every node transition over a FastAPI WebSocket to the dashboard.
+
+| Agent            | File                                                       | Role                                              |
+| ---------------- | ---------------------------------------------------------- | ------------------------------------------------- |
+| Supervisor       | `backend/app/agents/supervisor.py`                         | Routes graph, manages safety gates & token budget |
+| Planner          | `backend/app/agents/planner.py`                            | Tree-of-thought decomposition into JSON plan      |
+| Navigator        | `backend/app/agents/navigator.py`                          | Builds visual accessibility grid + coordinates    |
+| Executor         | `backend/app/agents/executor.py`                           | Playwright driver + PIL canvas simulator          |
+| Validator        | `backend/app/agents/validator.py`                          | Audits outcomes against plan criteria             |
+| Recovery         | `backend/app/agents/recovery.py`                           | Heuristic self-heal for broken selectors          |
+| Memory           | `backend/app/agents/memory.py`                             | Indexes successful trajectories for reuse         |
+
+---
+
+## Stack
+
+- **Frontend** — Next.js 14 (App Router), React 18, TypeScript, Tailwind CSS, WebGL/Three.js shader backdrop
+- **Backend** — FastAPI, Uvicorn, Pydantic v2, SQLAlchemy 2.x, LangGraph 0.6, LangChain
+- **Browser Engine** — Playwright (Chromium) for live mode, custom PIL canvas for simulation
+- **Storage** — SQLite (default) or PostgreSQL (via Docker / `DATABASE_URL`)
+- **Security** — AES-256 Fernet symmetric vault with PBKDF2-derived keys
+
+---
+
+## Quick Start (Local Mac)
+
+```bash
+# From project root: /Users/abhishekraj/Desktop/AgentOS
+cd "/Users/abhishekraj/Desktop/AgentOS"
+
+./start.sh     # installs deps, builds, starts backend (:8000) + frontend (:3000)
+```
+
+Open **http://localhost:3000** for the dashboard and **http://localhost:8000/docs** for the API.
+
+```bash
+./stop.sh      # stops both services cleanly
+```
+
+The startup script:
+1. Creates `backend/venv` if missing and installs `requirements.txt`
+2. Copies `.env.example` → `.env` on first run
+3. Builds the Next.js production bundle
+4. Launches Uvicorn (no reload) and `next start` in the background with logs in `.runtime/`
+
+### Manual mode (development)
+
+```bash
+# Backend
+cd backend
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8000
+
+# Frontend (separate terminal)
+cd frontend
+npm install
+npm run dev
+```
+
+---
+
+## Configuration
+
+Edit `backend/.env` (auto-created from `.env.example`):
+
+| Key                    | Default                    | Notes                                                  |
+| ---------------------- | -------------------------- | ------------------------------------------------------ |
+| `DATABASE_URL`         | `sqlite:///./agentos.db`   | Swap to `postgresql+psycopg2://...` for Postgres       |
+| `SECRET_VAULT_KEY`     | auto-derived (dev only)    | **Set a strong value before any real credential use**  |
+| `OPENAI_API_KEY`       | empty                      | Required only for live (non-simulation) mode           |
+| `AGENTOS_HEADLESS`     | `true`                     | Set `false` to watch Playwright in a real browser      |
+| `ALLOWED_ORIGINS`      | `http://localhost:3000`    | Comma-separated CORS origins                           |
+
+Frontend env (in `frontend/.env.local` — optional, defaults are correct for local dev):
+
+```
+NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXT_PUBLIC_WS_URL=ws://localhost:8000
+```
+
+---
+
+## Simulation vs Live Mode
+
+AgentOS has two execution modes, toggleable from the **Settings** tab in the dashboard.
+
+- **Simulation** (default) — generates ultra-realistic page mockups, mouse pointer trails, and step events via a custom Pillow canvas. Recruiter-friendly, zero API cost.
+- **Live** — boots sandboxed Playwright Chromium, takes real screenshots, calls OpenAI Vision or NVIDIA NIM. Requires `OPENAI_API_KEY`.
+
+---
+
+## Database
+
+Default is **SQLite** at `backend/agentos.db` — zero-config, works on any machine.
+
+To upgrade to PostgreSQL:
+
+```bash
+# Option 1 — local Postgres via Homebrew
+brew install postgresql@16
+brew services start postgresql@16
+createdb agentos
+# Then in backend/.env:
+# DATABASE_URL=postgresql+psycopg2://USER:PASS@localhost:5432/agentos
+
+# Option 2 — Docker Compose
+docker compose up -d db
+```
+
+---
+
+## API Endpoints
+
+| Method | Path                              | Purpose                          |
+| ------ | --------------------------------- | -------------------------------- |
+| GET    | `/`                               | Health check                     |
+| GET    | `/api/workflows`                  | List workflows                   |
+| POST   | `/api/workflows`                  | Create workflow + run mission    |
+| GET    | `/api/sessions`                   | List sessions                    |
+| GET    | `/api/sessions/{id}`              | Session details                  |
+| WS     | `/ws/{session_id}`                | Live event stream (LangGraph)    |
+| GET    | `/api/memory`                     | List indexed memory entries      |
+| GET    | `/api/credentials`                | List vault entries (masked)      |
+| POST   | `/api/credentials`                | Add vault entry (encrypted)      |
+| DELETE | `/api/credentials/{id}`           | Remove vault entry               |
+| GET    | `/api/metrics`                    | Aggregate usage metrics          |
+| GET    | `/api/settings`                   | Runtime settings                 |
+| POST   | `/api/settings`                   | Update runtime settings          |
+
+Interactive docs at **http://localhost:8000/docs**.
+
+---
+
+## End-to-End Test (curl)
+
+```bash
+# 1. Create a workflow
+curl -s -X POST http://localhost:8000/api/workflows \
+  -H "Content-Type: application/json" \
+  -d '{"goal":"Apply to remote React developer roles on LinkedIn"}'
+
+# 2. Stream events (use the session_id from the response)
+wscat -c ws://localhost:8000/ws/<session_id>
+```
+
+The dashboard does the same thing: creates a workflow, opens a WebSocket, and renders every LangGraph node transition in real time with live screenshots, step traces, and the "Re-Center Brain" neural visualization.
+
+---
+
+## Project Layout
+
+```
+AgentOS/
 ├── backend/
 │   ├── app/
-│   │   ├── api/             # REST Endpoints (Workflows, Sessions, Memories, Secure Vault)
-│   │   ├── agents/          # LangGraph Multi-Agent configurations
-│   │   │   ├── graph.py     # Main Compiled LangGraph definition
-│   │   │   ├── state.py     # Central shared Agent State Schema
-│   │   │   ├── planner.py   # Planner node
-│   │   │   ├── navigator.py # Navigator node
-│   │   │   ├── executor.py  # Playwright & PIL simulator
-│   │   │   ├── validator.py # Validator node
-│   │   │   ├── memory.py    # Database indexing memory
-│   │   │   ├── recovery.py  # Heuristic self-healer node
-│   │   │   └── supervisor.py# Routing supervisor node
-│   │   ├── core/            # App Settings (Pydantic) & AES Vault isolation
-│   │   ├── db/              # SQLAlchemy database session handles
-│   │   └── main.py          # FastAPI application server entrypoint
-│   ├── Dockerfile
-│   └── requirements.txt
+│   │   ├── agents/            # 7 LangGraph agents + compiled graph
+│   │   │   ├── graph.py       # Main compiled LangGraph
+│   │   │   ├── state.py       # Shared AgentState schema
+│   │   │   ├── planner.py
+│   │   │   ├── navigator.py
+│   │   │   ├── executor.py
+│   │   │   ├── validator.py
+│   │   │   ├── recovery.py
+│   │   │   ├── memory.py
+│   │   │   └── supervisor.py
+│   │   ├── api/               # REST endpoints
+│   │   ├── core/              # Settings + AES-256 vault
+│   │   ├── db/                # SQLAlchemy session + models
+│   │   └── main.py            # FastAPI app + WebSocket manager
+│   ├── requirements.txt
+│   ├── .env.example
+│   └── agentos.db             # SQLite (created on first run)
 ├── frontend/
 │   ├── src/
-│   │   ├── app/             # Next.js App Router (Layouts, Globals CSS, SPA Dashboard)
-│   │   └── tailwind.config.js# Sleek glassmorphism theme configurations
-│   ├── package.json
-│   └── Dockerfile
-└── docker-compose.yml       # Standard container cluster orchestrator
+│   │   ├── app/               # Next.js App Router
+│   │   ├── components/        # Hero, Dashboard, NeuralBackdrop
+│   │   ├── lib/api.ts         # Typed API client
+│   │   └── styles/            # Tailwind + globals
+│   ├── next.config.js
+│   └── package.json
+├── start.sh                   # One-shot local deploy
+├── stop.sh                    # Clean shutdown
+├── docker-compose.yml         # Optional Postgres container
+└── README.md
 ```
 
 ---
 
-## ⚡ Setup & Run Instructions
+## Troubleshooting
 
-### Option A: Run via Docker Compose (Recommended)
-This launches PostgreSQL, Redis, Uvicorn (FastAPI), and Next.js as unified microservices out-of-the-box:
-
-1. Navigate to the folder:
-   ```bash
-   cd "/Users/abhishekraj/Desktop/project resume"
-   ```
-2. Build and launch the container cluster:
-   ```bash
-   docker-compose up --build
-   ```
-3. Open your browser:
-   *   **Frontend Dashboard**: [http://localhost:3001](http://localhost:3001)
-   *   **FastAPI API Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
+- **`venv` not found / wrong path** — Run `rm -rf backend/venv && ./start.sh` to recreate it.
+- **`recursion limit exceeded`** — The compiled graph is configured with `recursion_limit=200`; do not override it lower.
+- **Frontend shows "Backend Offline"** — Check `.runtime/backend.log`; usually means the venv path changed.
+- **Port 3000 / 8000 in use** — `lsof -i :8000` to find the process, or change ports in `start.sh` and `frontend/.env.local`.
+- **Live mode does nothing** — `OPENAI_API_KEY` is empty; you are in simulation mode. Add a key in **Settings** to switch.
 
 ---
 
-### Option B: Local Setup (Native Execution)
+## Security Notes
 
-If you prefer to run the services natively in your local macOS terminal:
+- Credentials encrypted at rest with **AES-256-Fernet**; key derived via PBKDF2 from `SECRET_VAULT_KEY`.
+- Plaintext credentials are decrypted **only inside the executor frame** for the duration of one action, never logged.
+- All API inputs validated with Pydantic; CORS locked to `ALLOWED_ORIGINS`.
+- Playwright runs in a sandboxed context — no filesystem access outside its user data dir.
 
-#### 1. Start Backend (FastAPI + LangGraph)
-1. Navigate to backend:
-   ```bash
-   cd backend
-   ```
-2. Create and activate a Python virtual environment:
-   ```bash
-   python3 -m venv venv
-   source venv/bin/activate
-   ```
-3. Install Python packages and Playwright browser:
-   ```bash
-   pip install -r requirements.txt
-   playwright install chromium
-   ```
-4. Start Uvicorn:
-   ```bash
-   uvicorn app.main:app --reload --port 8000
-   ```
+---
 
-#### 2. Start Frontend (Next.js TypeScript)
-1. Navigate to frontend in a new terminal tab:
-   ```bash
-   cd frontend
-   ```
-2. Install npm modules:
-   ```bash
-   npm install
-   ```
-3. Boot the Next.js development server on port 3001:
-   ```bash
-   npx next dev -p 3001
-   ```
-4. Access the premium dashboard at [http://localhost:3001](http://localhost:3001).
+## License
+
+Private project. All rights reserved.

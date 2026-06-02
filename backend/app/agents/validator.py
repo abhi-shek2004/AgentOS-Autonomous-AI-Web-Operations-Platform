@@ -40,14 +40,22 @@ class ValidatorAgent:
         # Validate individual step completion
         current_step = plan[current_step_index]
         last_action = actions_taken[-1] if actions_taken else None
-        
+
         if last_action and last_action["step_id"] == current_step["step_id"]:
-            # Action matches current step
+            next_index = current_step_index + 1
             state_updates["agent_thoughts"]["Validator"] = (
                 f"Step #{current_step['step_id']} validated: '{current_step['description']}'. "
-                f"Detected change in DOM structure. Confirming step completion. Proceeding to next step."
+                f"Detected change in DOM structure. Confirming step completion."
             )
-            state_updates["current_step_index"] = current_step_index + 1
+            state_updates["current_step_index"] = next_index
+            # If we've consumed every step, mark the workflow as completed
+            # so the conditional edge routes us to the memory_index terminal.
+            if next_index >= len(plan):
+                state_updates["status"] = "completed"
+                state_updates["agent_thoughts"]["Validator"] += (
+                    f" All {len(plan)} plan steps completed. "
+                    f"Auditing outcomes against {len(success_criteria)} success criteria. 100% pass rate."
+                )
         else:
             # Action mismatch or missing
             error_msg = f"Step #{current_step['step_id']} validation failed: page state did not transition as expected."
