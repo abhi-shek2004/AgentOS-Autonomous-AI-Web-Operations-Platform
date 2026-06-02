@@ -1,5 +1,23 @@
 # AgentOS — Autonomous AI Web Operations Platform
 
+<p align="center">
+  <a href="https://frontend-two-ivory-76.vercel.app"><img src="https://img.shields.io/badge/LIVE_DEMO-https%3A%2F%2Ffrontend--two--ivory--76.vercel.app-00C7B7?style=for-the-badge&logo=vercel&logoColor=white" alt="Live Demo" /></a>
+  <img src="https://img.shields.io/badge/Platform-Autonomous%20Web%20OS-indigo?style=for-the-badge" alt="Platform" />
+  <img src="https://img.shields.io/badge/Orchestrator-LangGraph%20Multi--Agent-blue?style=for-the-badge" alt="Orchestrator" />
+  <img src="https://img.shields.io/badge/Engines-Playwright%20%7C%20Vision-emerald?style=for-the-badge" alt="Engines" />
+  <img src="https://img.shields.io/badge/Security-AES--256%20Vault-cyan?style=for-the-badge" alt="Security" />
+</p>
+
+<p align="center">
+  <a href="https://frontend-two-ivory-76.vercel.app"><strong>🌐 Launch Live Site →</strong></a>
+  &nbsp;·&nbsp;
+  <a href="https://github.com/abhi-shek2004/AgentOS-Autonomous-AI-Web-Operations-Platform">📦 Source</a>
+  &nbsp;·&nbsp;
+  <a href="https://frontend-two-ivory-76.vercel.app/docs">📖 API Docs (in-app)</a>
+</p>
+
+---
+
 > **"An autonomous multi-agent system capable of understanding, planning, executing, monitoring, and optimizing complex browser workflows without human intervention."**
 
 AgentOS is a production-grade autonomous web operations platform that executes complex, multi-tab internet workflows natively. A 7-agent **LangGraph** orchestrator decomposes natural language goals, analyzes visible layouts via visual DOM coordinate grids, safely injects credentials from an AES-256 Vault, executes mouse/keyboard gestures via Playwright, and self-heals broken selectors automatically.
@@ -47,6 +65,17 @@ Seven specialized agents share a typed LangGraph `AgentState` and stream every n
 - **Browser Engine** — Playwright (Chromium) for live mode, custom PIL canvas for simulation
 - **Storage** — SQLite (default) or PostgreSQL (via Docker / `DATABASE_URL`)
 - **Security** — AES-256 Fernet symmetric vault with PBKDF2-derived keys
+- **Deploy** — Vercel (frontend) + Cloudflare quick tunnel (backend) via `./deploy.sh`
+
+---
+
+## 🌐 Live Demo
+
+**👉 [https://frontend-two-ivory-76.vercel.app](https://frontend-two-ivory-76.vercel.app)**
+
+The site is live on Vercel. The backend is tunneled from a local FastAPI server through a Cloudflare quick tunnel — so when you launch a mission on the live site, the LangGraph orchestrator runs on the host machine that started the tunnel.
+
+> **Note**: Cloudflare quick tunnels change URL on restart. The site is live while the tunnel is active. To keep it always-on, see [Deployment](#deployment) below.
 
 ---
 
@@ -212,6 +241,60 @@ AgentOS/
 ├── stop.sh                    # Clean shutdown
 ├── docker-compose.yml         # Optional Postgres container
 └── README.md
+```
+
+---
+
+## Deployment
+
+### Deploy frontend to Vercel + tunnel backend
+
+The included `./deploy.sh` script does everything in one shot:
+
+```bash
+./deploy.sh
+```
+
+What it does:
+1. Verifies the local FastAPI backend is running on `:8000`
+2. Starts a Cloudflare quick tunnel (free, no signup) → captures the public URL
+3. Rebuilds the Next.js bundle with `NEXT_PUBLIC_API_URL` and `NEXT_PUBLIC_WS_URL` pointing at the tunnel
+4. Deploys to Vercel production with `--force` so the new env vars are baked in
+
+Current live site: **[https://frontend-two-ivory-76.vercel.app](https://frontend-two-ivory-76.vercel.app)**
+
+### Vercel project settings
+
+`vercel.json` configures the build:
+
+- `rootDirectory`: `frontend` (Vercel only sees the Next.js app)
+- `framework`: `nextjs`
+- `regions`: `iad1` (US East)
+- Security headers: `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`
+
+### Stable tunnel (recommended for production-feel demo)
+
+The default Cloudflare quick tunnel URL changes on every restart. To keep the same URL forever, set up a free [Cloudflare named tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/):
+
+```bash
+cloudflared tunnel login
+cloudflared tunnel create agentos
+cloudflared tunnel route dns agentos agentos.yourdomain.com
+cloudflared tunnel run agentos
+```
+
+Then in `deploy.sh`, replace the cloudflared line with your named tunnel command and remove the URL-grabbing logic. The Vercel env vars stay stable forever.
+
+### Manual Vercel deploy (without the script)
+
+```bash
+cd frontend
+NEXT_PUBLIC_API_URL=https://your-tunnel.example.com \
+NEXT_PUBLIC_WS_URL=wss://your-tunnel.example.com \
+  npm run build
+vercel deploy --prod --cwd frontend \
+  -b NEXT_PUBLIC_API_URL=https://your-tunnel.example.com \
+  -b NEXT_PUBLIC_WS_URL=wss://your-tunnel.example.com
 ```
 
 ---
