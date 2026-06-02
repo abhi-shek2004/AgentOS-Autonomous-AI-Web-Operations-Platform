@@ -20,8 +20,10 @@ stop_pidfile() {
 echo "[*] Stopping AgentOS services…"
 stop_pidfile "$LOG_DIR/frontend.pid"
 stop_pidfile "$LOG_DIR/backend.pid"
+stop_pidfile "$LOG_DIR/cloudflared.pid"
 # Catch any orphans
 pkill -f "uvicorn app.main:app" 2>/dev/null || true
 pkill -f "next-server" 2>/dev/null || true
 pkill -f "next start" 2>/dev/null || true
+pkill -f "cloudflared tunnel" 2>/dev/null || true
 echo "[*] Done."
